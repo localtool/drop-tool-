@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Portal Drop - Mobile Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Product Sans', sans-serif; background-color: #f8f9fa; color: #202124; padding: 24px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; }
+        .upload-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; box-sizing: border-box; }
+        h1 { font-size: 22px; font-weight: 400; color: #1a73e8; margin-top: 0; margin-bottom: 8px; }
+        p { font-size: 14px; color: #5f6368; line-height: 1.5; margin-bottom: 24px; }
+        .status { font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 12px; border-radius: 16px; background: #e8f0fe; color: #1a73e8; display: inline-block; margin-bottom: 24px; letter-spacing: 0.5px; }
+        .file-input-label { display: block; background-color: #1a73e8; color: #ffffff; padding: 12px 24px; border-radius: 4px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-bottom: 12px; }
+        .file-input-label:active { background-color: #1557b0; }
+        input[type="file"] { display: none; }
+        #file-name-preview { font-size: 13px; color: #3c4043; font-weight: 500; margin-top: 8px; margin-bottom: 16px; word-break: break-all; }
+        button { background-color: #34a853; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: 500; width: 100%; cursor: pointer; display: none; }
+        button:active { background-color: #2b8a43; }
+    </style>
+</head>
+<body>
+
+    <div class="upload-card">
+        <h1>Local Portal Drop</h1>
+        <p>Alifushi Council Mobile Gateway Component</p>
+        
+        <div id="status-badge" class="status">Connected to Workstation</div>
+        
+        <label for="mobile-file-picker" class="file-input-label">Select File or Take Photo</label>
+        <input type="file" id="mobile-file-picker" onchange="previewSelectedFile(this)">
+        
+        <div id="file-name-preview"></div>
+        
+        <button id="send-btn" onclick="uploadPayloadToWorkstation()">Send File to Workstation</button>
+    </div>
+
+    <script>
+        let filePayload = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetRoomId = urlParams.get('room');
+
+        if (!targetRoomId) {
+            document.getElementById("status-badge").innerText = "Error: Invalid Link";
+            document.getElementById("status-badge").style.backgroundColor = "#fce8e6";
+            document.getElementById("status-badge").style.color = "#c5221f";
+        }
+
+        function previewSelectedFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Formatting size constraints
+                let sizeStr = (file.size / 1024).toFixed(1) + " KB";
+                if (file.size > 1024 * 1024) sizeStr = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+                
+                filePayload = {
+                    name: file.name,
+                    size: sizeStr,
+                    dataUrl: e.target.result
+                };
+                
+                document.getElementById("file-name-preview").innerText = `Selected: ${file.name} (${sizeStr})`;
+                document.getElementById("send-btn").style.display = "block";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadPayloadToWorkstation() {
+            if (!filePayload || !targetRoomId) return;
+            
+            const btn = document.getElementById("send-btn");
+            const badge = document.getElementById("status-badge");
+            
+            btn.disabled = true;
+            btn.innerText = "Uploading Asset...";
+            btn.style.backgroundColor = "#9aa0a6";
+
+            try {
+                const response = await fetch(`https://kv.val.town/v1/objects/${targetRoomId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        timestamp: Date.now(),
+                        file: filePayload
+                    })
+                });
+
+                if (response.ok) {
+                    badge.innerText = "File Sent!";
+                    badge.style.backgroundColor = "#e6f4ea";
+                    badge.style.color = "#137333";
+                    btn.style.display = "none";
+                    document.getElementById("file-name-preview").innerText = "Transfer completed successfully.";
+                } else {
+                    throw new Error("Channel failure");
+                }
+            } catch (err) {
+                badge.innerText = "Transfer Failed";
+                badge.style.backgroundColor = "#fce8e6";
+                badge.style.color = "#c5221f";
+                btn.disabled = false;
+                btn.innerText = "Retry Sending File";
+                btn.style.backgroundColor = "#34a853";
+            }
+        }
+    </script>
+</body>
+</html>
