@@ -3,65 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Drop</title>
+    <title>Local Portal Drop - Mobile Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --blue: #1a73e8; --gray: #f8f9fa; --border: #dadce0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--gray); padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 400px; width: 100%; box-sizing: border-box; margin-bottom: 16px; }
-        #status-badge { font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 16px; background: #e8f0fe; color: var(--blue); margin-bottom: 20px; display: inline-block; }
-        .btn { background: var(--blue); color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 500; cursor: pointer; width: 100%; margin-top: 10px; }
-        .incoming-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        body { font-family: 'Product Sans', sans-serif; background-color: #f8f9fa; color: #202124; padding: 24px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; }
+        .upload-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; box-sizing: border-box; margin-bottom: 16px; }
+        h1 { font-size: 22px; font-weight: 400; color: #1a73e8; margin-top: 0; margin-bottom: 8px; }
+        p { font-size: 14px; color: #5f6368; line-height: 1.5; margin-bottom: 24px; }
+        .status { font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 12px; border-radius: 16px; background: #e8f0fe; color: #1a73e8; display: inline-block; margin-bottom: 24px; letter-spacing: 0.5px; }
+        .file-input-label { display: block; background-color: #1a73e8; color: #ffffff; padding: 12px 24px; border-radius: 4px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-bottom: 12px; }
+        .file-input-label:active { background-color: #1557b0; }
         input[type="file"] { display: none; }
-        .upload-trigger { border: 2px dashed #dadce0; padding: 20px; border-radius: 12px; cursor: pointer; text-align: center; color: #5f6368; }
+        #file-name-preview { font-size: 13px; color: #3c4043; font-weight: 500; margin-top: 8px; margin-bottom: 16px; word-break: break-all; }
+        button { background-color: #34a853; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: 500; width: 100%; cursor: pointer; display: none; }
+        button:active { background-color: #2b8a43; }
+        
+        .receive-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; display: none; flex-direction: column; }
+        .receive-card h2 { font-size: 16px; font-weight: 500; color: #202124; margin-top: 0; margin-bottom: 12px; text-align: left; }
+        .incoming-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; font-size: 13px; margin-bottom: 8px; text-align: left; }
+        .incoming-item a { background-color: #1a73e8; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-weight: 500; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div id="status-badge">Initializing...</div>
-        <label class="upload-trigger" for="file-picker">Choose file or drag here</label>
-        <input type="file" id="file-picker" multiple>
-        <button id="send-btn" class="btn" style="display:none;">Send Files</button>
+    <div class="upload-card">
+        <h1>Local Portal Drop</h1>
+        <p>Alifushi Council Mobile Gateway Component</p>
+        
+        <div id="status-badge" class="status">Connecting...</div>
+        
+        <label for="mobile-file-picker" class="file-input-label">Select Files or Take Photos</label>
+        <input type="file" id="mobile-file-picker" multiple onchange="previewSelectedFiles(this)">
+        
+        <div id="file-name-preview"></div>
+        
+        <button id="send-btn" onclick="uploadPayloadToWorkstation()">Send Files to Workstation</button>
     </div>
 
-    <div class="card" id="receive-card" style="display:none;">
-        <h3 style="margin-top:0; font-size: 14px; color: #5f6368;">Received</h3>
+    <div id="mobile-receive-card" class="receive-card">
+        <h2>📥 Received from Workstation</h2>
         <div id="mobile-incoming-list"></div>
     </div>
 
     <script>
-        const badge = document.getElementById("status-badge");
+        let filePayloads = [];
+        let conn = null;
+
         const urlParams = new URLSearchParams(window.location.search);
         const targetPeerId = urlParams.get('targetPeerId');
-        let conn;
+        const badge = document.getElementById("status-badge");
 
-        const peer = new Peer({ config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] } });
-
-        peer.on('open', () => {
-            conn = peer.connect(targetPeerId);
-            conn.on('open', () => { 
-                badge.innerText = "Connected"; 
-                document.getElementById('send-btn').style.display = "block";
+        if (!targetPeerId) {
+            badge.innerText = "Error: Invalid Link";
+            badge.style.backgroundColor = "#fce8e6";
+            badge.style.color = "#c5221f";
+        } else {
+            // Instantiating with matching STUN configurations to allow mobile networks to sync
+            const peer = new Peer({
+                config: {
+                    'iceServers': [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                }
             });
-            conn.on('data', (d) => { if(d.type === "FILE_TRANSFER") renderFile(d.file); });
-        });
+            
+            peer.on('open', () => {
+                badge.innerText = "Connecting to Workstation...";
+                conn = peer.connect(targetPeerId);
 
-        function renderFile(f) {
-            document.getElementById("receive-card").style.display = "block";
-            const list = document.getElementById("mobile-incoming-list");
-            list.innerHTML += `<div class="incoming-item"><span>${f.name}</span><a href="${f.dataUrl}" download="${f.name}">Save</a></div>`;
+                conn.on('open', () => {
+                    badge.innerText = "Connected to Workstation";
+                    badge.style.backgroundColor = "#e6f4ea";
+                    badge.style.color = "#137333";
+                    
+                    // Shows send button instantly if files are already selected
+                    if (filePayloads.length > 0) {
+                        document.getElementById("send-btn").style.display = "block";
+                    }
+                    
+                    // Fixed Listener: Processes bidirectional file transfers smoothly
+                    conn.on('data', (data) => {
+                        if (data && data.type === "FILE_TRANSFER") {
+                            handleIncomingFromDesktop(data.file);
+                        }
+                    });
+                });
+
+                conn.on('close', () => {
+                    badge.innerText = "Disconnected";
+                    badge.style.backgroundColor = "#fce8e6";
+                    badge.style.color = "#c5221f";
+                    document.getElementById("send-btn").style.display = "none";
+                });
+            });
         }
 
-        document.getElementById('send-btn').onclick = () => {
-            const file = document.getElementById('file-picker').files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                conn.send({ type: "FILE_TRANSFER", file: { name: file.name, dataUrl: e.target.result } });
-                alert("Sent!");
-            };
-            reader.readAsDataURL(file);
-        };
+        function handleIncomingFromDesktop(fileData) {
+            const receiveCard = document.getElementById("mobile-receive-card");
+            const incomingList = document.getElementById("mobile-incoming-list");
+            
+            if (receiveCard) receiveCard.style.display = "flex";
+            
+            const itemRow = document.createElement("div");
+            itemRow.className = "incoming-item";
+            
+            const info = document.createElement("div");
+            info.innerHTML = `<strong>${fileData.name}</strong><br><span style="color:#5f6368; font-size:11px;">${fileData.size}</span>`;
+            
+            const downloadLink = document.createElement("a");
+            downloadLink.innerText = "Save";
+            downloadLink.href = fileData.dataUrl;
+            downloadLink.download = fileData.name;
+            
+            itemRow.appendChild(info);
+            itemRow.appendChild(downloadLink);
+            if (incomingList) incomingList.appendChild(itemRow);
+        }
+
+        function previewSelectedFiles(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+
+            filePayloads = [];
+            let loadedCount = 0;
+            const previewDiv = document.getElementById("file-name-preview");
+            previewDiv.innerText = `Processing ${files.length} file(s)...`;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let sizeStr = (file.size / 1024).toFixed(1) + " KB";
+                    if (file.size > 1024 * 1024) sizeStr = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+                    
+                    filePayloads.push({
+                        name: file.name,
+                        size: sizeStr,
+                        dataUrl: e.target.result
+                    });
+                    
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        previewDiv.innerText = `Selected: ${files.length} file(s) ready to send.`;
+                        if (conn && conn.open) {
+                            document.getElementById("send-btn").style.display = "block";
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function uploadPayloadToWorkstation() {
+            if (filePayloads.length === 0 || !conn || !conn.open) return;
+            
+            const btn = document.getElementById("send-btn");
+            btn.disabled = true;
+            btn.innerText = "Uploading Assets...";
+            btn.style.backgroundColor = "#9aa0a6";
+
+            try {
+                filePayloads.forEach(payload => {
+                    conn.send({
+                        type: "FILE_TRANSFER",
+                        file: payload
+                    });
+                });
+
+                badge.innerText = "Files Sent!";
+                badge.style.backgroundColor = "#e6f4ea";
+                badge.style.color = "#137333";
+                btn.style.display = "none";
+                document.getElementById("file-name-preview").innerText = `Successfully transferred ${filePayloads.length} file(s).`;
+            } catch (err) {
+                badge.innerText = "Transfer Failed";
+                badge.style.backgroundColor = "#fce8e6";
+                badge.style.color = "#c5221f";
+                btn.disabled = false;
+                btn.innerText = "Retry Sending Files";
+                btn.style.backgroundColor = "#34a853";
+            }
+        }
     </script>
 </body>
 </html>
