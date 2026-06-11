@@ -9,22 +9,137 @@
     <link href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { font-family: 'Product Sans', sans-serif; background-color: #f8f9fa; color: #202124; padding: 24px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; }
-        .upload-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); text-align: center; box-sizing: border-box; margin-bottom: 16px; }
-        h1 { font-size: 22px; font-weight: 400; color: #1a73e8; margin-top: 0; margin-bottom: 8px; }
-        p { font-size: 14px; color: #5f6368; line-height: 1.5; margin-bottom: 24px; }
-        .status { font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 12px; border-radius: 16px; background: #e8f0fe; color: #1a73e8; display: inline-block; margin-bottom: 24px; letter-spacing: 0.5px; }
-        .file-input-label { display: block; background-color: #1a73e8; color: #ffffff; padding: 12px 24px; border-radius: 4px; font-weight: 500; font-size: 14px; cursor: pointer; transition: background 0.2s; margin-bottom: 12px; }
-        .file-input-label:active { background-color: #1557b0; }
-        input[type="file"] { display: none; }
-        #file-name-preview { font-size: 13px; color: #3c4043; font-weight: 500; margin-top: 8px; margin-bottom: 16px; word-break: break-all; }
-        button { background-color: #34a853; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-size: 14px; font-weight: 500; width: 100%; cursor: pointer; display: none; }
-        button:active { background-color: #2b8a43; }
-        
-        .receive-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 1px 3px rgba(0,0,0,0.05); box-sizing: border-box; display: none; flex-direction: column; }
-        .receive-card h2 { font-size: 16px; font-weight: 500; color: #202124; margin-top: 0; margin-bottom: 12px; text-align: left; }
-        .incoming-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #f8f9fa; border: 1px solid #dadce0; border-radius: 4px; font-size: 13px; margin-bottom: 8px; text-align: left; }
-        .incoming-item a { background-color: #1a73e8; color: white; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-weight: 500; font-size: 12px; }
+        body { 
+            font-family: 'Product Sans', sans-serif; 
+            background-color: #f8f9fa; 
+            color: #202124; 
+            padding: 24px; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 80vh; 
+        }
+        .upload-card { 
+            background: #ffffff; 
+            border: 1px solid #dadce0; 
+            border-radius: 8px; 
+            padding: 24px; 
+            max-width: 400px; 
+            width: 100%; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            text-align: center; 
+            box-sizing: border-box; 
+            margin-bottom: 16px; 
+        }
+        h1 { 
+            font-size: 22px; 
+            font-weight: 400; 
+            color: #1a73e8; 
+            margin-top: 0; 
+            margin-bottom: 8px; 
+        }
+        p { 
+            font-size: 14px; 
+            color: #5f6368; 
+            line-height: 1.5; 
+            margin-bottom: 24px; 
+        }
+        .status { 
+            font-size: 12px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            padding: 6px 12px; 
+            border-radius: 16px; 
+            background: #e8f0fe; 
+            color: #1a73e8; 
+            display: inline-block; 
+            margin-bottom: 24px; 
+            letter-spacing: 0.5px; 
+        }
+        .file-input-label { 
+            display: block; 
+            background-color: #1a73e8; 
+            color: #ffffff; 
+            padding: 12px 24px; 
+            border-radius: 4px; 
+            font-weight: 500; 
+            font-size: 14px; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            margin-bottom: 12px; 
+        }
+        .file-input-label:active { 
+            background-color: #1557b0; 
+        }
+        input[type="file"] { 
+            display: none; 
+        }
+        #file-name-preview { 
+            font-size: 13px; 
+            color: #3c4043; 
+            font-weight: 500; 
+            margin-top: 8px; 
+            margin-bottom: 16px; 
+            word-break: break-all; 
+        }
+        button { 
+            background-color: #34a853; 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 4px; 
+            font-size: 14px; 
+            font-weight: 500; 
+            width: 100%; 
+            cursor: pointer; 
+            display: none; 
+        }
+        button:active { 
+            background-color: #2b8a43; 
+        }
+        .receive-card { 
+            background: #ffffff; 
+            border: 1px solid #dadce0; 
+            border-radius: 8px; 
+            padding: 24px; 
+            max-width: 400px; 
+            width: 100%; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+            box-sizing: border-box; 
+            display: none; 
+            flex-direction: column; 
+        }
+        .receive-card h2 { 
+            font-size: 16px; 
+            font-weight: 500; 
+            color: #202124; 
+            margin-top: 0; 
+            margin-bottom: 12px; 
+            text-align: left; 
+        }
+        .incoming-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 10px; 
+            background: #f8f9fa; 
+            border: 1px solid #dadce0; 
+            border-radius: 4px; 
+            font-size: 13px; 
+            margin-bottom: 8px; 
+            text-align: left; 
+        }
+        .incoming-item a { 
+            background-color: #1a73e8; 
+            color: white; 
+            text-decoration: none; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            font-weight: 500; 
+            font-size: 12px; 
+        }
     </style>
 </head>
 <body>
@@ -61,7 +176,7 @@
             badge.style.backgroundColor = "#fce8e6";
             badge.style.color = "#c5221f";
         } else {
-            // Instantiating with matching STUN configurations to allow mobile networks to sync
+            // Configured with global STUN servers to bypass mobile firewalls
             const peer = new Peer({
                 config: {
                     'iceServers': [
@@ -80,12 +195,14 @@
                     badge.style.backgroundColor = "#e6f4ea";
                     badge.style.color = "#137333";
                     
-                    // Shows send button instantly if files are already selected
+                    // AUTOMATIC PING: Fires instantly to force-draw the PC's send button
+                    conn.send({ type: "PING" });
+                    
                     if (filePayloads.length > 0) {
                         document.getElementById("send-btn").style.display = "block";
                     }
                     
-                    // Fixed Listener: Processes bidirectional file transfers smoothly
+                    // Incoming data controller for handling incoming desktop streams
                     conn.on('data', (data) => {
                         if (data && data.type === "FILE_TRANSFER") {
                             handleIncomingFromDesktop(data.file);
